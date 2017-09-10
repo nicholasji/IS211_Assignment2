@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""Week 2 Assignment https://s3.amazonaws.com/cuny-is211-spring2015/birthdays100.csv """
+
+import argparse,csv,datetime,logging,urllib2
+
+def main():
+    def downloadData(url):
+        #captures file
+        url_file = urllib2.urlopen(url)
+        return url_file
+
+    def processData(content):
+        # processes file line by line
+        dictionary = csv.reader(content)
+        keys = dictionary.next()
+        dateFormat = '%d/%m/%Y'
+        x = 1
+        result = {}
+
+        dictionary = [dict(zip(keys, row)) for row in dictionary]
+
+        for row in dictionary:
+            try:
+                date = datetime.datetime.strptime(row['birthday'], dateFormat)
+            except:
+                logger.error('Error processing line #%s for ID #%s' % (x, row['id']))
+
+            result[int(row['id'])] = (row['name'], row['birthday'])
+            x += 1
+
+        return result
+
+    def displayPerson(id, personData):
+        #prints the name and birthday of given id #
+        try:
+            dateFormat = '%d/%m/%Y'
+            date = datetime.datetime.strptime(personData[id][1], dateFormat)
+            date = '%s-%02d-%02d' % (date.year, date.month, date.day)
+            name = personData[id][0]
+            print 'Person #%s is %s with a birthday of %s' % (id, name, date)
+        except:
+            print "No user found with that id"
+
+    url_parser = argparse.ArgumentParser()
+    url_parser.add_argument("--url", help='Enter URL of CSV file location')
+    args = url_parser.parse_args()
+    logging.basicConfig(filename='error.log', level=logging.ERROR)
+    logger = logging.getLogger('assignment2')
+
+    if args.url:
+        try:
+            csvData = downloadData(args.url)
+            personData = processData(csvData)
+            prompt = "Enter ID # (enter a # <=0 to exit):"
+            boolVal = True
+
+            while boolVal:
+
+                try:
+                    userInput = int(raw_input(prompt))
+
+                except:
+                    print 'Does not compute. Enter ID #'
+                    continue
+
+                if userInput > 0:
+                    displayPerson(userInput, personData)
+
+                else:
+                    print "Goodbye."
+                    boolVal = False
+        except:
+            print "Invalid URL"
+    else:
+        print "Type --help for assistance"
+
+
+if __name__ == "__main__":
+    main()
+
